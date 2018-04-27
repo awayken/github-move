@@ -1,0 +1,126 @@
+class PoemInput extends React.Component {
+    blankState = { value: '' }
+
+    constructor(props) {
+        super(props)
+        this.handleTextInput = this.handleTextInput.bind(this)
+        this.handleSubmit = this.handleSubmit.bind(this)
+        this.state = this.blankState
+    }
+    
+    handleTextInput(event) {
+        this.setState({
+            value: event.target.value
+        })
+    }
+    
+    handleSubmit(event) {
+        event.preventDefault()
+        this.props.saveLine(this.state.value)
+        this.setState(this.blankState)
+    }
+    
+    render() {
+        return (
+            <form className="villanelle--input" onSubmit={this.handleSubmit}>
+                <span className="villanelle--rhyme">{this.props.rhymeScheme}</span>
+                <label className="sronly" htmlFor="villanelleinput">Poem Line</label>
+                <input className="villanelle-textbox" type="text" name="villanelleinput" id="villanelleinput" onChange={this.handleTextInput} value={this.state.value} placeholder={this.props.rhymeHint} autoComplete="none" />
+                <button type="submit">Add</button>
+            </form>
+        )
+    }
+}
+
+class PoemLine extends React.Component {
+    constructor(props) {
+        super(props)
+    }
+    
+    render() {
+        return (
+            <div className="villanelle--line">
+                <span className="villanelle--rhyme">{this.props.rhymeScheme}</span>
+                <span className="villanelle--text">{this.props.text}</span>
+            </div>
+        )
+    }
+}
+
+class Villanelle extends React.Component {
+    scheme = ['A1', 'b', 'A2', 'a', 'b', 'A1', 'a', 'b', 'A2', 'a', 'b', 'A1', 'a', 'b', 'A2', 'a', 'b', 'A1', 'A2']
+
+    constructor(props) {
+        super(props);
+        this.handlePoemInput = this.handlePoemInput.bind(this)
+        this.state = {
+            completedLines: [],
+        };
+    }
+    
+    getRefrain(refrainNumber) {
+        const lines = this.state.completedLines;
+        
+        if (refrainNumber === 2 && lines.length >= 3) {
+            return lines[2]
+        } else if (refrainNumber !== 2 && lines.length >= 1) {
+            return lines[0]
+        }
+        
+        return ''
+    }
+
+    getRhymeScheme(lineNumber) {
+        return this.scheme[lineNumber]
+    }
+
+    getRhymeHint(lineNumber) {
+        const currentScheme = this.getRhymeScheme(lineNumber)
+        let hint = `End line with rhyming scheme "${currentScheme}"`
+        
+        if (currentScheme === 'A1') {
+            hint = this.getRefrain(1)
+            if (!hint.length) {
+                hint = 'Write your first refrain.'
+            }
+        } else if (currentScheme === 'A2') {
+            hint = this.getRefrain(2)
+            if (!hint.length) {
+                hint = 'Write your second refrain.'
+            }
+        }
+        return hint
+    }
+
+    handlePoemInput(lineText) {
+        const completedLines = this.state.completedLines
+        completedLines.push(lineText)
+        this.setState({
+            completedLines: completedLines
+        })
+    }
+
+    render() {
+        const completedLines = this.state.completedLines.map((line, index) => 
+            <PoemLine key={`line${index}`} rhymeScheme={this.getRhymeScheme(index)} text={line} />
+        )
+        return (
+            <div className="villanelle">
+                {completedLines}
+                {
+                    completedLines.length < this.scheme.length
+                    ? <PoemInput
+                          rhymeScheme={this.getRhymeScheme(completedLines.length)}
+                          rhymeHint={this.getRhymeHint(completedLines.length)}
+                          saveLine={this.handlePoemInput} />
+                    : ''
+                }
+            </div>
+        );
+    }
+}
+
+ReactDOM.render(
+  <Villanelle />,
+  document.getElementById('app')
+);
